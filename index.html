@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>智联生活</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+            margin: 30px; 
+            background-color: #f4f6f9; 
+            color: #2c3e50; 
+            line-height: 1.5; 
+        }
+        .main-container { 
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h1 { color: #1a3a5f; border-bottom: 2px solid #e1e8ed; padding-bottom: 10px; font-size: 26px; text-align: center; font-weight: bold; letter-spacing: 1px; }
+        .workspace-banner { background: #eef2f7; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #5c768d; margin-bottom: 25px; text-align: center; border: 1px solid #d1dbe5; }
+        .module-card { background: #ffffff; border: 1px solid #e1e8ed; border-radius: 6px; padding: 22px; margin-bottom: 30px; }
+        h2 { font-size: 16px; color: #1a3a5f; margin-top: 0; margin-bottom: 12px; border-left: 4px solid #1a3a5f; padding-left: 8px; }
+        textarea { width: 100%; height: 110px; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 10px; resize: vertical; }
+        
+        /* 财务布局 */
+        .finance-split { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        .finance-box { border: 1px solid #ccc; border-radius: 6px; padding: 15px; background: #fafbfc; }
+        .flex-1 { flex: 1; min-width: 280px; }
+        .form-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; }
+        input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+        
+        button { background-color: #1a3a5f; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+        .btn-save { background-color: #27ae60; width: 100%; padding: 10px; font-size: 14px; }
+        .btn-save:hover { background-color: #219653; }
+        .btn-del { background-color: #c0392b; padding: 4px 8px; font-size: 12px; }
+        .btn-del:hover { background-color: #962d22; }
+        
+        /* 表格黑实线 */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 10px; }
+        table, th, td { border: 1px solid #000000 !important; } 
+        th, td { padding: 10px 12px; text-align: left; font-size: 14px; color: #000000; vertical-align: top; }
+        th { background-color: #f7f9fa; font-weight: bold; }
+        
+        .ledger-container { max-height: 180px; overflow-y: auto; border: 1px solid #000000; background: #fff; }
+        .result-box { display: none; margin-top: 20px; }
+        .advice-banner { background-color: #fff9e6; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 4px; margin-top: 15px; font-size: 14px; line-height: 1.6; }
+        
+        /* 动态编译后的 AI 结构化笔记样式 */
+        .structured-output { background-color: #ffffff; border: 1px solid #000000; padding: 20px; border-radius: 4px; font-size: 14px; margin-top: 15px; color: #000000; }
+        .ai-header { font-size: 15px; color: #1a3a5f; margin-top: 15px; margin-bottom: 8px; border-left: 4px solid #1a3a5f; padding-left: 8px; font-weight: bold; }
+        .point-item { display: flex; align-items: flex-start; margin-bottom: 8px; line-height: 1.5; }
+        .point-bullet { color: #1a3a5f; margin-right: 10px; font-weight: bold; font-size: 15px; user-select: none; }
+        .point-content { flex: 1; }
+        .tag-prefix { background: #eef2f7; color: #1a3a5f; padding: 1px 6px; border-radius: 3px; font-weight: bold; margin-right: 6px; font-size: 13px; border: 1px solid #d1dbe5; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <h1>智联生活</h1>
+    <div class="workspace-banner">
+        💾 <strong>持久化本地安全沙盒已连接：</strong> 您的排班、账簿流水与笔记已安全独立保存在当前设备。
+    </div>
+
+    <div class="module-card">
+        <h2>i) 时间管理模块 (Time Management)</h2>
+        <p style="font-size:13px; color:#7f8c8d; margin-top:-5px;">请输入您的日程计划(例如：我星期一8点到11点得空，我想复习国文和英文)。系统会自动拆分到具体的每一天和对应科目格子中。</p>
+        <textarea id="schedule-input" placeholder="请在此处输入您的排班与计划资料..."></textarea>
+        <button onclick="generatePreciseSchedule()">智能分析并生成排班时间表</button>
+        
+        <div id="schedule-res-area" class="result-box">
+            <table id="schedule-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">具体日期/天</th>
+                        <th style="width: 25%;">时间段</th>
+                        <th style="width: 55%;">具体任务安排</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="schedule-ask" class="advice-banner" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <h2>ii) 财务管理模块 (Financial Budgeting)</h2>
+        <p style="font-size:13px; color:#7f8c8d; margin-top:-5px;">系统配备持久化账簿，右侧支持一键总结并生成纯黑绝对实线的财务明细报告表。</p>
+        
+        <div class="finance-split">
+            <div class="finance-box flex-1">
+                <h3 style="font-size:14px; margin-top:0; color:#1a3a5f;">◆ 第一步：登记新账目 (持久化写入)</h3>
+                <div class="form-row">
+                    <input type="date" id="tx-date" style="width: 135px;">
+                    <select id="tx-type" style="width: 80px;">
+                        <option value="支出">支出 (-)</option>
+                        <option value="收入">收入 (+)</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <input type="text" id="tx-text" placeholder="用处/来源" style="flex:1;">
+                    <input type="number" id="tx-amount" placeholder="金额" step="0.01" style="width:85px;">
+                </div>
+                <button class="btn-save" onclick="saveTransactionToDatabase()">保存该笔账目到本地账簿</button>
+                
+                <h3 style="font-size:13px; margin-bottom:5px; color:#555; margin-top:15px;">我的历史流水账簿清单：</h3>
+                <div class="ledger-container">
+                    <table style="margin:0; width:100%; border:none;">
+                        <tbody id="ledger-tbody"></tbody>
+                    </table>
+                </div>
+                <button style="background-color:#7f8c8d; font-size:11px; padding:3px 8px; margin-top:5px;" onclick="clearAllTransactions()">清空全部历史数据</button>
+            </div>
+            
+            <div class="finance-box flex-1" style="border-color:#1a3a5f; background:#f7f9fa;">
+                <h3 style="font-size:14px; margin-top:0; color:#1a3a5f;">◆ 第二步：多周期智能总账报表生成</h3>
+                <div style="margin-bottom: 12px;">
+                    <label><strong>1. 选择核算周期：</strong></label>
+                    <select id="finance-period" onchange="togglePeriodHint()">
+                        <option value="每日">每日财务报告</option>
+                        <option value="每星期">每星期财务报告表</option>
+                        <option value="每月">每月财务报告表</option>
+                        <option value="每年">每年财务报告</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label><strong>2. 选定目标基准日期：</strong></label>
+                    <input type="date" id="report-target-date">
+                    <div id="period-hint" style="font-size:12px; color:#e67e22; margin-top:3px;"></div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label><strong>3. 输入此周期的预算基准额 (RM)：</strong></label>
+                    <input type="number" id="finance-budget" value="20.00" step="0.01" style="width:110px;">
+                </div>
+                <button style="width:100%; padding:10px; font-size:14px; background-color:#1a3a5f;" onclick="calculateAdvancedFinance()">
+                    从本地数据库提取账单并核算
+                </button>
+            </div>
+        </div>
+
+        <div id="finance-res-area" class="result-box">
+            <h4 style="margin-bottom:5px; color:#000000;" id="finance-report-title">模块根据以上生产的财务报告表</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:20%;">预算设定额</th>
+                        <th style="width:30%;">收入总明细</th>
+                        <th style="width:30%;">支出总明细</th>
+                        <th style="width:20%;">实际收支超/低过预算结算</th>
+                    </tr>
+                </thead>
+                <tbody id="finance-tbody"></tbody>
+            </table>
+            <div id="finance-advice" class="advice-banner"></div>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <h2>iii) 笔记模块 (Structured Note-taking)</h2>
+        <p style="font-size:13px; color:#7f8c8d; margin-top:-5px;">粘贴文本，系统将全面*剔除无关关联词*，提取核心名词并转化成极简标签式的 Point Form。</p>
+        <textarea id="note-input" placeholder="在此粘贴长文章或地理/历史文本..."></textarea>
+        <button onclick="generateDynamicPointFormNotes()">实时编译并生成精简 Point Form 笔记</button>
+        
+        <div id="note-res-area" class="result-box">
+            <h4 style="margin-bottom:5px; color:#000000;">系统根据您提供的数据动态整理的极简 Point Form 结构化笔记：</h4>
+            <div id="note-output" class="structured-output"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatBoldText(text) {
+        if (!text) return "";
+        return text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:bold;">$1</strong>')
+                   .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    }
+
+    // 编译 Markdown 纯文本到结构化的 HTML 标签与 Point Form 布局
+    function compileMarkdownToStructuredHTML(mdText) {
+        if (!mdText) return "暂无笔记内容生成。";
+        const lines = mdText.split('\n');
+        let htmlResult = "";
+
+        lines.forEach(line => {
+            let trimmed = line.trim();
+            if (!trimmed) return;
+
+            // 1. 处理 Markdown 标题
+            if (trimmed.startsWith('###')) {
+                let titleText = trimmed.replace(/^###\s*/, '');
+                htmlResult += `<div class="ai-header">${formatBoldText(titleText)}</div>`;
+                return;
+            }
+            if (trimmed.startsWith('##')) {
+                let titleText = trimmed.replace(/^##\s*/, '');
+                htmlResult += `<div class="ai-header" style="font-size:16px;">${formatBoldText(titleText)}</div>`;
+                return;
+            }
+
+            // 2. 处理无序列表短点
+            if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+                let content = trimmed.replace(/^[-\*]\s*/, '');
+                let tagHtml = "";
+                const tagMatch = content.match(/^\*\*(.*?)\*\*[:：]?\s*/);
+                
+                if (tagMatch) {
+                    const tagTitle = tagMatch[1];
+                    tagHtml = `<span class="tag-prefix">${tagTitle}</span>`;
+                    content = content.replace(/^\*\*(.*?)\*\*[:：]?\s*/, '');
+                } else {
+                    tagHtml = `<span class="tag-prefix">核心内容</span>`;
+                }
+
+                htmlResult += `
+                    <div class="point-item">
+                        <span class="point-bullet">•</span>
+                        <div class="point-content">${tagHtml}${formatBoldText(content)}</div>
+                    </div>`;
+                return;
+            }
+
+            // 3. 普通常规文本行处理
+            htmlResult += `<p style="margin: 4px 0; padding-left: 15px;">${formatBoldText(trimmed)}</p>`;
+        });
+
+        return htmlResult;
+    }
+
+    window.onload = function() {
+        const todayStr = "2026-07-01";
+        document.getElementById('tx-date').value = todayStr;
+        document.getElementById('report-target-date').value = todayStr;
+
+        if(localStorage.getItem('user_sch_raw')) document.getElementById('schedule-input').value = localStorage.getItem('user_sch_raw');
+        if(localStorage.getItem('user_note_raw')) document.getElementById('note-input').value = localStorage.getItem('user_note_raw');
+        if(localStorage.getItem('user_budget')) document.getElementById('finance-budget').value = localStorage.getItem('user_budget');
+        
+        if (!localStorage.getItem('user_transactions')) {
+            const sampleData = [
+                {date: "2026-07-01", type: "收入", text: "兼职零花钱", amount: 50.00},
+                {date: "2026-07-01", type: "支出", text: "午餐", amount: 3.50},
+                {date: "2026-07-01", type: "支出", text: "晚餐", amount: 5.00}
+            ];
+            localStorage.setItem('user_transactions', JSON.stringify(sampleData));
+        }
+
+        renderLedgerTable();
+        togglePeriodHint();
+    }
+
+    // 🚀 i) 时间管理模块：超强全动态活动提取引擎版
+    function generatePreciseSchedule() {
+        const rawText = document.getElementById('schedule-input').value.trim();
+        const tbody = document.querySelector('#schedule-table tbody');
+        const askBox = document.getElementById('schedule-ask');
+        const resArea = document.getElementById('schedule-res-area');
+        const tableEl = document.getElementById('schedule-table');
+        
+        tbody.innerHTML = '';
+        localStorage.setItem('user_sch_raw', rawText);
+
+        // 基础验证：至少要提到“点”或者特定的星期
+        if (rawText.length < 10 || (!rawText.includes("点") && !rawText.includes("星期"))) {
+            tableEl.style.display = 'none';
+            askBox.innerHTML = `
+                <strong>【⚠️ 资料不全，需要向您提问补全】</strong><br>
+                您好！为了帮您生成精确的时间表，请提供具体的空闲星期（如：星期一）以及您想做的活动（如：运动、练钢琴）。
+            `;
+            askBox.style.display = 'block';
+            resArea.style.display = 'block';
+            return;
+        }
+
+        askBox.style.display = 'none';
+        const weekdays = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
+        
+        let activities = [];
+        
+        // 1. 寻找触发词后面的文本
+        const match = rawText.match(/(?:想复习|想要|想|需要|安排|要做|进行)[:：]?\s*(.*)/);
+        
+        if (match && match[1]) {
+            let actText = match[1];
+            
+            // 2. 统一替换连接符（已修正原先末尾多出 "|" 导致切分碎裂的 Bug 🌟）
+            actText = actText.replace(/和|以及|还有|兼|、|，/g, ',');
+            
+            // 3. 切分、去空格、过滤
+            activities = actText.split(',')
+                                .map(item => item.trim())
+                                .filter(item => item.length > 0 && !/^的?事情$|^各种活动$/.test(item));
+        }
+
+        // 🔍 智能加工：学科名称前面自动加上“复习”
+        activities = activities.map(act => {
+            if (["国文", "英文", "华文", "数学", "历史", "地理", "科学"].includes(act)) {
+                return "复习" + act;
+            }
+            return act; 
+        });
+
+        // 🪵 兜底策略
+        if (activities.length === 0) {
+            activities = ["温习功课", "自由活动"];
+        }
+
+        // 循环遍历星期渲染表格
+        weekdays.forEach(day => {
+            if (rawText.includes(day)) {
+                // 处理指定的休息日
+                if (rawText.includes("休息") && rawText.indexOf("休息") > rawText.indexOf(day) - 5 && rawText.indexOf("休息") < rawText.indexOf(day) + 15) {
+                    tbody.innerHTML += `<tr><td>${day}</td><td>全天</td><td>${formatBoldText("**休息一天** (用户指定不空闲时间)")}</td></tr>`;
+                    return;
+                }
+                
+                // 动态分配活动
+                const firstAct = activities[0] || "自由支配时间";
+                const secondAct = activities[1] || "自由支配时间";
+                const thirdAct = activities[2] || "放松休息";
+
+                if (day === "星期一" || day === "星期三" || day === "星期六" || day === "星期日") {
+                    tbody.innerHTML += `
+                    <tr><td rowspan="3" style="vertical-align:middle; font-weight:bold;">${day}</td><td>8:15pm - 9:15pm</td><td>${formatBoldText(`**${firstAct}**`)}</td></tr>
+                    <tr><td>9:15pm - 9:30pm</td><td> ${formatBoldText("*适度休息*")}</td></tr>
+                    <tr><td>9:30pm - 10:10pm</td><td>${formatBoldText(`**${secondAct}**`)}</td></tr>`;
+                } else {
+                    tbody.innerHTML += `
+                    <tr><td rowspan="5" style="vertical-align:middle; font-weight:bold;">${day}</td><td>5:15pm - 6:45pm</td><td>${formatBoldText(`**${firstAct}**`)}</td></tr>
+                    <tr><td>6:45pm - 8:00pm</td><td>${formatBoldText("*冲凉和吃晚餐*")}</td></tr>
+                    <tr><td>8:15pm - 9:15pm</td><td>${formatBoldText(`**${secondAct}**`)}</td></tr>
+                    <tr><td>9:15pm - 9:30pm</td><td>${formatBoldText("*适度休息*")}</td></tr>
+                    <tr><td>9:30pm - 10:10pm</td><td>${formatBoldText(`**${thirdAct}**`)}</td></tr>`;
+                }
+            }
+        });
+        
+        tableEl.style.display = 'table';
+        resArea.style.display = 'block';
+    }
+
+    // iii) 笔记模块远程编译逻辑
+    async function generateDynamicPointFormNotes() {
+        const notes = document.getElementById("note-input").value.trim();
+        const output = document.getElementById("note-output");
+        const resArea = document.getElementById("note-res-area");
+
+        if (!notes) {
+            alert("请先在上方输入框粘贴需要整理的原始文章文本！");
+            return;
+        }
+
+        localStorage.setItem('user_note_raw', notes);
+        output.innerText = "智联 AI 正在提炼底层数据并过滤无关词，请稍候...";
+        resArea.style.display = 'block';
+
+        try {
+            const res = await fetch("http://localhost:3000/study", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ notes: notes })
+            });
+
+            const data = await res.json();
+            output.innerHTML = compileMarkdownToStructuredHTML(data.result);
+        } catch (err) {
+            console.error(err);
+            output.innerText = "无法成功连接本地沙盒 AI 核心驱动器。";
+        }
+    }
+
+    // 财务管理逻辑
+    function togglePeriodHint() {
+        const period = document.getElementById('finance-period').value;
+        const hintBox = document.getElementById('period-hint');
+        if (period === '每星期') hintBox.innerText = "💡 系统将自动汇总包含该日期在内的整周（周一至周日）流水。";
+        else if (period === '每月') hintBox.innerText = "💡 系统将全面总结调出该日期所属整整一个月的全部账单明细。";
+        else hintBox.innerText = "";
+    }
+
+    function getTransactionsFromStorage() { return JSON.parse(localStorage.getItem('user_transactions')) || []; }
+
+    function renderLedgerTable() {
+        const txs = getTransactionsFromStorage();
+        const tbody = document.getElementById('ledger-tbody');
+        tbody.innerHTML = '';
+        if (txs.length === 0) {
+            tbody.innerHTML = '<tr><td style="text-align:center;color:#aaa;border:none !important;">账簿目前为空，请在上方登账</td></tr>';
+            return;
+        }
+        txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+        txs.forEach((tx, index) => {
+            const color = tx.type === '收入' ? 'green' : '#c0392b';
+            const sign = tx.type === '收入' ? '+' : '-';
+            tbody.innerHTML += `
+                <tr style="background:#fff;">
+                    <td style="border:none !important; font-size:12px; width:90px;">${tx.date}</td>
+                    <td style="border:none !important; font-size:12px;"><strong>[${tx.type}]</strong> ${tx.text}</td>
+                    <td style="border:none !important; font-size:12px; color:${color}; font-weight:bold; text-align:right; width:80px;">${sign}RM ${tx.amount.toFixed(2)}</td>
+                    <td style="border:none !important; text-align:center; width:45px;"><button class="btn-del" onclick="deleteTransaction(${index})">删除</button></td>
+                </tr>`;
+        });
+    }
+
+    function saveTransactionToDatabase() {
+        const date = document.getElementById('tx-date').value;
+        const type = document.getElementById('tx-type').value;
+        const text = document.getElementById('tx-text').value.trim();
+        const amount = parseFloat(document.getElementById('tx-amount').value);
+        if (!date || !text || isNaN(amount) || amount < 0) { alert("请输入完整的记账数据！"); return; }
+        const txs = getTransactionsFromStorage();
+        txs.push({ date, type, text, amount });
+        localStorage.setItem('user_transactions', JSON.stringify(txs));
+        document.getElementById('tx-text').value = '';
+        document.getElementById('tx-amount').value = '';
+        renderLedgerTable();
+        alert("🎉 账目保存成功！已独立保存在本地数据库。");
+    }
+
+    function deleteTransaction(index) {
+        let txs = getTransactionsFromStorage();
+        txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+        txs.splice(index, 1);
+        localStorage.setItem('user_transactions', JSON.stringify(txs));
+        renderLedgerTable();
+    }
+
+    function clearAllTransactions() {
+        if(confirm("确定要彻底清空本地账簿中所有的历史记账流水吗？")) {
+            localStorage.setItem('user_transactions', JSON.stringify([]));
+            renderLedgerTable();
+        }
+    }
+
+    // 周核算算法
+    function isSameWeek(date1Str, date2Str) {
+        const d1 = new Date(date1Str); const d2 = new Date(date2Str);
+        const getWeekNumber = (d) => {
+            const day = d.getDay() === 0 ? 7 : d.getDay();
+            const date = d.getDate() - day + 1;
+            return new Date(d.getFullYear(), d.getMonth(), date).getTime();
+        }
+        return getWeekNumber(d1) === getWeekNumber(d2);
+    }
+
+    function calculateAdvancedFinance() {
+        const period = document.getElementById('finance-period').value;
+        const targetDate = document.getElementById('report-target-date').value;
+        const budget = parseFloat(document.getElementById('finance-budget').value) || 0.0;
+        if (!targetDate) { alert("请选择核算目标基准日期！"); return; }
+        localStorage.setItem('user_budget', budget);
+
+        const txs = getTransactionsFromStorage();
+        const filteredTxs = txs.filter(tx => {
+            if (period === '每日') return tx.date === targetDate;
+            if (period === '每星期') return isSameWeek(tx.date, targetDate);
+            if (period === '每月') return tx.date.substring(0, 7) === targetDate.substring(0, 7);
+            if (period === '每年') return tx.date.substring(0, 4) === targetDate.substring(0, 4);
+            return false;
+        });
+
+        let incomeHtml = ''; let totalIncome = 0; let expenseHtml = ''; let totalExpense = 0;
+        filteredTxs.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        filteredTxs.forEach(tx => {
+            if (tx.type === '收入') {
+                incomeHtml += `<div>• [${tx.date}] ${tx.text}: +RM ${tx.amount.toFixed(2)}</div>`;
+                totalIncome += tx.amount;
+            } else {
+                expenseHtml += `<div>• [${tx.date}] ${tx.text}: -RM ${tx.amount.toFixed(2)}</div>`;
+                totalExpense += tx.amount;
+            }
+        });
+
+        if (!incomeHtml) incomeHtml = '<div>暂无账单数据录入</div>';
+        if (!expenseHtml) expenseHtml = '<div>暂无账单数据录入</div>';
+
+        const netBalance = totalIncome - totalExpense;
+        const overUnder = netBalance - budget;
+        document.getElementById('finance-report-title').innerText = `模块根据以上生成的 ${period} 财务报告表`;
+        document.getElementById('finance-tbody').innerHTML = `
+            <tr>
+                <td>+RM ${budget.toFixed(2)}</td>
+                <td>${incomeHtml}<br><strong>收入总计: +RM ${totalIncome.toFixed(2)}</strong></td>
+                <td>${expenseHtml}<br><strong>支出总计: -RM ${totalExpense.toFixed(2)}</strong></td>
+                <td style="font-weight:bold; color: ${overUnder >= 0 ? 'green' : 'red'};">
+                    ${overUnder >= 0 ? '+' : ''}RM ${overUnder.toFixed(2)}
+                </td>
+            </tr>`;
+
+        const adviceBox = document.getElementById('finance-advice');
+        if (overUnder < 0) {
+            adviceBox.innerHTML = formatBoldText(`今日用户**超过预算**，需再接再厉，尽量**减少支出**的金额或**提高自己**的预算/收入。(相比预算基准减少了 RM ${Math.abs(overUnder).toFixed(2)})`);
+        } else {
+            adviceBox.innerHTML = formatBoldText("今日用户*未超预算，理财表现优秀！请继续保持理性消费*。");
+        }
+        document.getElementById('finance-res-area').style.display = 'block';
+    }
+</script>
+</body>
+</html>
