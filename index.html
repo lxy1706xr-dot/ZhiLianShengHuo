@@ -377,16 +377,7 @@
 // 1. 修正：將 sync 改為 async 才能在內部使用 await
 async function generateDynamicPointFormNotes() {
     // 請確保前端代碼中的解析段落如下：
-const data = await res.json();
 
-// 修正：candidates 是一個陣列，必須拿 [0]
-if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-    const markdownResult = data.candidates[0].content.parts[0].text;
-    output.innerHTML = compileMarkdownToStructuredHTML(markdownResult);
-} else {
-    console.error("Gemini 錯誤或格式不符:", data);
-    output.innerText = "AI 回傳數據格式錯誤，請檢查 Cloudflare 後台日誌。";
-}
 
     const notes = document.getElementById("note-input").value.trim();
     const output = document.getElementById("note-output");
@@ -423,16 +414,15 @@ if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
         });
 
         const data = await res.json();
-        
-        // 4. 解析：提取 Gemini 標準返回的 Markdown 文本內容
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-            const markdownResult = data.candidates[0].content.parts[0].text;
-            // 傳入您原有的 Markdown 渲染函數
-            output.innerHTML = compileMarkdownToStructuredHTML(markdownResult);
-        } else {
-            console.error("Gemini 返回結構異常:", data);
-            output.innerText = "AI 回傳數據格式錯誤，請檢查後台日誌。";
-        }
+
+// 修正：candidates 是一個陣列，必須拿 [0]
+if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+    const markdownResult = data.candidates[0].content.parts[0].text;
+    output.innerHTML = compileMarkdownToStructuredHTML(markdownResult);
+} else {
+    console.error("Gemini 錯誤或格式不符:", data);
+    output.innerText = "AI 回傳數據格式錯誤，請檢查 Cloudflare 後台日誌。";
+}
 
     } catch (err) {
         console.error(err);
