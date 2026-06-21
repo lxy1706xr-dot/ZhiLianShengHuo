@@ -484,42 +484,45 @@ async function generateDynamicPointFormNotes() {
     resArea.style.display = 'block';
 
     try {
-        // 2. 替換：改為您第一步部署好的 Cloudflare Worker 網址
-        const proxyUrl = 'https://zhilianshenghuo.onrender.com'; 
+    // 1. 🎯 修正：必须在域名末尾加上 /study 路由路径！
+    const proxyUrl = 'https://onrender.com'; 
 
-        // 3. 調整：構建符合 Gemini API 規範的 Prompt 提示詞
-        const geminiPayload = {
-            contents: [{
-                parts: [{
-                    text: `请将以下原始文章文本提炼底层数据，过滤无关词，并整理成结构化的 Markdown 重点笔记：\n\n${notes}`
-                }]
-            }]
-        };
+    // 2. 🎯 修正：完美对齐你的 Node.js 后端，后端需要 req.body.notes
+    // 你的提示词直接在前端和 notes 组合好发过去
+    const payload = {
+        notes: `请将以下原始文章文本提炼底层数据，过滤无关词，并整理成结构化的 Markdown 重点笔记：\n\n${notes}`
+    };
 
-        const res = await fetch(proxyUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(geminiPayload) // 發送符合 Gemini 格式的數據
-        });
+    const res = await fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload) // 发送后端看得懂的简练数据
+    });
 
-        const data = await res.json();
-
-// 修正：candidates 是一個陣列，必須拿 [0]
-if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-    const markdownResult = data.candidates[0].content.parts[0].text;
-    output.innerHTML = compileMarkdownToStructuredHTML(markdownResult);
-} else {
-    console.error("Gemini 錯誤或格式不符:", data);
-    output.innerText = "AI 回傳數據格式錯誤，請檢查 Cloudflare 後台日誌。";
-}
-
-    } catch (err) {
-        console.error(err);
-        // 5. 提示：更新錯誤訊息以符合目前的網絡架構
-        output.innerText = "无法成功连接 AI 核心驱动器，请检查网络或中转服务。";
+    // 如果服务器状态码不是 200~299，主动抛出错误，防止解析空数据
+    if (!res.ok) {
+        throw new Error(`服务器响应失败，状态码: ${res.status}`);
     }
+
+    const data = await res.json();
+    console.log("Render 后端返回的真实数据:", data);
+
+    // 3. 🎯 修正：你的 Node.js 后端返回的结构是 { result: "AI文本" }
+    if (data.result && !data.result.startsWith('Error:')) {
+        // 使用你的 HTML 内置函数渲染 Markdown 文本
+        output.innerHTML = compileMarkdownToStructuredHTML(data.result);
+    } else {
+        console.error("Gemini 报错或格式不符:", data);
+        output.innerText = "AI 核心驱动器返回了错误: " + (data.result || "未知错误");
+    }
+
+} catch (err) {
+    console.error("本次请求捕获到的真实真凶:", err);
+    // 把真实的错误原因直接打印在网页上，方便我们一眼看穿
+    output.innerText = "系统错误提示: " + err.message + " (请检查网络、Render唤醒状态或控制台)";
+}
 }
 
 
