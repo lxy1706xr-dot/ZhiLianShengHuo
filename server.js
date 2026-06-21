@@ -47,7 +47,7 @@
 import { setGlobalDispatcher, ProxyAgent } from 'undici';
 
 // Replace 7890 with your actual local VPN client port (e.g., Clash/v2ray/Shadowsocks)
-const proxyUrl = 'http://127.0.0.1:7890'; 
+const proxyUrl = 'https://onrender.com/study'; 
 setGlobalDispatcher(new ProxyAgent(proxyUrl));
 import { GoogleGenAI } from '@google/genai';  // Import the official Gemini SDK
 import express from 'express';
