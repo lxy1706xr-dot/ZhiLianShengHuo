@@ -44,11 +44,19 @@
 // app.listen(PORT, () => {
 //   console.log(`Server running on http://localhost:${PORT}`);
 // });
-import { setGlobalDispatcher, ProxyAgent } from 'undici';
+
 
 // Replace 7890 with your actual local VPN client port (e.g., Clash/v2ray/Shadowsocks)
-const proxyUrl = 'http://127.0.0.1:7890'; 
-setGlobalDispatcher(new ProxyAgent(proxyUrl));
+import { setGlobalDispatcher, ProxyAgent } from 'undici';
+
+// 只有当不在 Render 环境时（也就是在你本地电脑上），才启用代理
+if (!process.env.RENDER) {
+  console.log('🔧 检测到本地环境：正在启用本地 7890 代理...');
+  const proxyUrl = 'http://127.0.0.1:7890'; 
+  setGlobalDispatcher(new ProxyAgent(proxyUrl));
+} else {
+  console.log('🚀 检测到 Render 云环境：已跳过本地代理，使用原生网络直连！');
+}
 import { GoogleGenAI } from '@google/genai';  // Import the official Gemini SDK
 import express from 'express';
 import cors from 'cors';
